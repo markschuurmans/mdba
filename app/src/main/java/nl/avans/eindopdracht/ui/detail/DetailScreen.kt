@@ -1,6 +1,12 @@
 package nl.avans.eindopdracht.ui.detail
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,22 +21,67 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import nl.avans.eindopdracht.data.CocktailPhotoStore
 import nl.avans.eindopdracht.model.CocktailDetail
+import nl.avans.eindopdracht.ui.common.LocalUriImage
 import nl.avans.eindopdracht.ui.common.VolleyNetworkImage
 
 @Composable
 fun DetailRoute(
     viewModel: DetailViewModel,
+    cocktailId: String,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val photoStore = remember(context) { CocktailPhotoStore(context) }
+
+    var userPhotoUri by rememberSaveable(cocktailId) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(cocktailId) {
+        userPhotoUri = photoStore.getPhotoUri(cocktailId)
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+
+        val uriText = uri.toString()
+        userPhotoUri = uriText
+        val cocktailName = uiState.cocktailDetail?.name ?: "Cocktail $cocktailId"
+        photoStore.savePhotoUri(cocktailId, cocktailName, uriText)
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            pickImageLauncher.launch(arrayOf("image/*"))
+        } else {
+            Toast.makeText(context, "Toegang tot afbeeldingen geweigerd", Toast.LENGTH_SHORT)
+                .show()
+        }
+    }
 
     DetailScreen(
         uiState = uiState,
@@ -54,6 +105,23 @@ fun DetailRoute(
             }
             context.startActivity(Intent.createChooser(shareIntent, "Deel recept via"))
         },
+        userPhotoUri = userPhotoUri,
+        onPickUserPhoto = {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                pickImageLauncher.launch(arrayOf("image/*"))
+                return@DetailScreen
+            }
+
+            val permissionStatus = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_MEDIA_IMAGES
+            )
+            if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
+                pickImageLauncher.launch(arrayOf("image/*"))
+            } else {
+                permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+        },
         modifier = modifier
     )
 }
@@ -63,6 +131,8 @@ fun DetailScreen(
     uiState: DetailUiState,
     onRetry: () -> Unit,
     onShareRecipe: (CocktailDetail) -> Unit,
+    userPhotoUri: String?,
+    onPickUserPhoto: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when {
@@ -129,6 +199,27 @@ fun DetailScreen(
                 item {
                     Button(onClick = { onShareRecipe(detail) }) {
                         Text(text = "Deel Recept")
+                    }
+                }
+                item {
+                    Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
+                }
+                item {
+                    if (userPhotoUri != null) {
+                        LocalUriImage(
+                            uriString = userPhotoUri,
+                            contentDescription = "Eigen foto voor ${detail.name}",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                        )
+                    } else {
+                        Text(text = "Nog geen eigen foto gekozen")
+                    }
+                }
+                item {
+                    Button(onClick = onPickUserPhoto) {
+                        Text(text = "Upload Eigen Foto")
                     }
                 }
             }

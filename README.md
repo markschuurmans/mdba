@@ -16,6 +16,8 @@ Stap 2 is toegevoegd met:
 - Detailflow met `lookup.php?i=ID` via `DetailViewModel`
 - Ingredienten + instructies op het detail scherm
 - `Deel Recept` knop via implicit intent (`ACTION_SEND`)
+- Upload eigen foto op detailpagina met implicit intent + lokale opslag van URI
+- Bottom navigation met extra galerijscherm voor alle geuploade foto's
 
 ## Belangrijke bestanden
 
@@ -25,6 +27,7 @@ Stap 2 is toegevoegd met:
 - `app/src/main/java/nl/avans/eindopdracht/network/ApiConfig.kt`
 - `app/src/main/java/nl/avans/eindopdracht/network/VolleySingleton.kt`
 - `app/src/main/java/nl/avans/eindopdracht/data/CocktailRepository.kt`
+- `app/src/main/java/nl/avans/eindopdracht/data/CocktailPhotoStore.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/home/HomeViewModel.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/home/HomeScreen.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/common/VolleyNetworkImage.kt`
@@ -32,6 +35,8 @@ Stap 2 is toegevoegd met:
 - `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailScreen.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailViewModel.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailUiState.kt`
+- `app/src/main/java/nl/avans/eindopdracht/ui/gallery/GalleryScreen.kt`
+- `app/src/main/java/nl/avans/eindopdracht/ui/gallery/GalleryViewModel.kt`
 
 ## Opmerking
 
