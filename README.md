@@ -13,12 +13,15 @@ Stap 2 is toegevoegd met:
 - Navigation Compose (`home` -> `detail/{cocktailId}`)
 - Klikbare cocktail-rijen in de home lijst
 - Thumbnail rendering via Volley `ImageRequest` (zonder externe image library)
-- Placeholder `DetailScreen` met ontvangen cocktail-id
+- Detailflow met `lookup.php?i=ID` via `DetailViewModel`
+- Ingredienten + instructies op het detail scherm
+- `Deel Recept` knop via implicit intent (`ACTION_SEND`)
 
 ## Belangrijke bestanden
 
 - `app/src/main/java/nl/avans/eindopdracht/MainActivity.kt`
 - `app/src/main/java/nl/avans/eindopdracht/model/Cocktail.kt`
+- `app/src/main/java/nl/avans/eindopdracht/model/CocktailDetail.kt`
 - `app/src/main/java/nl/avans/eindopdracht/network/ApiConfig.kt`
 - `app/src/main/java/nl/avans/eindopdracht/network/VolleySingleton.kt`
 - `app/src/main/java/nl/avans/eindopdracht/data/CocktailRepository.kt`
@@ -27,6 +30,8 @@ Stap 2 is toegevoegd met:
 - `app/src/main/java/nl/avans/eindopdracht/ui/common/VolleyNetworkImage.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/navigation/AppDestinations.kt`
 - `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailScreen.kt`
+- `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailViewModel.kt`
+- `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailUiState.kt`
 
 ## Opmerking
 

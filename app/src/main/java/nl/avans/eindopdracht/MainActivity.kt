@@ -14,7 +14,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import nl.avans.eindopdracht.ui.detail.DetailScreen
+import nl.avans.eindopdracht.ui.detail.DetailRoute
+import nl.avans.eindopdracht.ui.detail.DetailViewModel
 import nl.avans.eindopdracht.ui.home.HomeRoute
 import nl.avans.eindopdracht.ui.home.HomeViewModel
 import nl.avans.eindopdracht.ui.navigation.AppDestinations
@@ -56,7 +57,15 @@ class MainActivity : ComponentActivity() {
                             val cocktailId = backStackEntry.arguments
                                 ?.getString(AppDestinations.COCKTAIL_ID_ARG)
                                 .orEmpty()
-                            DetailScreen(cocktailId = cocktailId)
+
+                            val detailViewModel: DetailViewModel = viewModel(
+                                key = "detail_$cocktailId",
+                                factory = DetailViewModel.provideFactory(
+                                    application = application,
+                                    cocktailId = cocktailId
+                                )
+                            )
+                            DetailRoute(viewModel = detailViewModel)
                         }
                     }
                 }
