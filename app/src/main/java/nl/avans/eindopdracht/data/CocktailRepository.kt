@@ -98,10 +98,10 @@ class CocktailRepository(context: Context) {
         val ingredients = mutableListOf<String>()
         for (index in 1..15) {
             val ingredient = drink.optString("strIngredient$index").trim()
-            if (ingredient.isBlank()) continue
+            if (ingredient.isBlank() || ingredient == "null") continue
 
             val measure = drink.optString("strMeasure$index").trim()
-            val line = if (measure.isBlank()) ingredient else "$measure $ingredient"
+            val line = if (measure.isBlank() || measure == "null") ingredient else "$measure $ingredient"
             ingredients.add(line)
         }
         return ingredients
