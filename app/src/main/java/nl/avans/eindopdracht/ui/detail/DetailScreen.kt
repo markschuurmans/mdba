@@ -1,6 +1,7 @@
 package nl.avans.eindopdracht.ui.detail
 
 import android.Manifest
+import android.content.res.Configuration
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -10,10 +11,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -30,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -135,6 +139,9 @@ fun DetailScreen(
     onPickUserPhoto: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     when {
         uiState.isLoading -> {
             Column(
@@ -167,59 +174,131 @@ fun DetailScreen(
 
         uiState.cocktailDetail != null -> {
             val detail = uiState.cocktailDetail
-            LazyColumn(
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    VolleyNetworkImage(
-                        imageUrl = detail.imageUrl,
-                        contentDescription = detail.name,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                    )
-                }
-                item {
-                    Text(text = detail.name, style = MaterialTheme.typography.headlineSmall)
-                }
-                item {
-                    Text(text = "Ingredienten", style = MaterialTheme.typography.titleMedium)
-                }
-                items(detail.ingredients) { ingredient ->
-                    Text(text = "- $ingredient", style = MaterialTheme.typography.bodyLarge)
-                }
-                item {
-                    Text(text = "Instructies", style = MaterialTheme.typography.titleMedium)
-                }
-                item {
-                    Text(text = detail.instructions, style = MaterialTheme.typography.bodyLarge)
-                }
-                item {
-                    Button(onClick = { onShareRecipe(detail) }) {
-                        Text(text = "Deel Recept")
+            if (isLandscape) {
+                Row(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item {
+                            VolleyNetworkImage(
+                                imageUrl = detail.imageUrl,
+                                contentDescription = detail.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(260.dp)
+                            )
+                        }
+                        item {
+                            Text(text = detail.name, style = MaterialTheme.typography.headlineSmall)
+                        }
+                        item {
+                            Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
+                        }
+                        item {
+                            if (userPhotoUri != null) {
+                                LocalUriImage(
+                                    uriString = userPhotoUri,
+                                    contentDescription = "Eigen foto voor ${detail.name}",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(220.dp)
+                                )
+                            } else {
+                                Text(text = "Nog geen eigen foto gekozen")
+                            }
+                        }
+                        item {
+                            Button(onClick = onPickUserPhoto) {
+                                Text(text = "Upload Eigen Foto")
+                            }
+                        }
+                    }
+
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(16.dp))
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item {
+                            Text(text = "Ingredienten", style = MaterialTheme.typography.titleMedium)
+                        }
+                        items(detail.ingredients) { ingredient ->
+                            Text(text = "- $ingredient", style = MaterialTheme.typography.bodyLarge)
+                        }
+                        item {
+                            Text(text = "Instructies", style = MaterialTheme.typography.titleMedium)
+                        }
+                        item {
+                            Text(text = detail.instructions, style = MaterialTheme.typography.bodyLarge)
+                        }
+                        item {
+                            Button(onClick = { onShareRecipe(detail) }) {
+                                Text(text = "Deel Recept")
+                            }
+                        }
                     }
                 }
-                item {
-                    Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
-                }
-                item {
-                    if (userPhotoUri != null) {
-                        LocalUriImage(
-                            uriString = userPhotoUri,
-                            contentDescription = "Eigen foto voor ${detail.name}",
+            } else {
+                LazyColumn(
+                    modifier = modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        VolleyNetworkImage(
+                            imageUrl = detail.imageUrl,
+                            contentDescription = detail.name,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(220.dp)
+                                .height(240.dp)
                         )
-                    } else {
-                        Text(text = "Nog geen eigen foto gekozen")
                     }
-                }
-                item {
-                    Button(onClick = onPickUserPhoto) {
-                        Text(text = "Upload Eigen Foto")
+                    item {
+                        Text(text = detail.name, style = MaterialTheme.typography.headlineSmall)
+                    }
+                    item {
+                        Text(text = "Ingredienten", style = MaterialTheme.typography.titleMedium)
+                    }
+                    items(detail.ingredients) { ingredient ->
+                        Text(text = "- $ingredient", style = MaterialTheme.typography.bodyLarge)
+                    }
+                    item {
+                        Text(text = "Instructies", style = MaterialTheme.typography.titleMedium)
+                    }
+                    item {
+                        Text(text = detail.instructions, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    item {
+                        Button(onClick = { onShareRecipe(detail) }) {
+                            Text(text = "Deel Recept")
+                        }
+                    }
+                    item {
+                        Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
+                    }
+                    item {
+                        if (userPhotoUri != null) {
+                            LocalUriImage(
+                                uriString = userPhotoUri,
+                                contentDescription = "Eigen foto voor ${detail.name}",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(220.dp)
+                            )
+                        } else {
+                            Text(text = "Nog geen eigen foto gekozen")
+                        }
+                    }
+                    item {
+                        Button(onClick = onPickUserPhoto) {
+                            Text(text = "Upload Eigen Foto")
+                        }
                     }
                 }
             }

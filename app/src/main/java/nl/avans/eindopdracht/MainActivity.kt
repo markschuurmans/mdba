@@ -1,9 +1,12 @@
 package nl.avans.eindopdracht
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Collections
@@ -22,6 +25,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -33,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -78,6 +84,18 @@ class MainActivity : ComponentActivity() {
                 val currentRoute = navBackStackEntry.value?.destination?.route
                 val isTopLevel = currentRoute == AppDestinations.HOME ||
                     currentRoute == AppDestinations.GALLERY
+                val configuration = LocalConfiguration.current
+                val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+                val navigateToTopLevel: (String) -> Unit = { route ->
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -106,17 +124,11 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     bottomBar = {
-                        if (isTopLevel) NavigationBar {
+                        if (isTopLevel && !isLandscape) NavigationBar {
                             NavigationBarItem(
                                 selected = currentRoute == AppDestinations.HOME,
                                 onClick = {
-                                    navController.navigate(AppDestinations.HOME) {
-                                        popUpTo(navController.graph.startDestinationId) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    navigateToTopLevel(AppDestinations.HOME)
                                 },
                                 icon = {
                                     Icon(
@@ -134,13 +146,7 @@ class MainActivity : ComponentActivity() {
                             NavigationBarItem(
                                 selected = currentRoute == AppDestinations.GALLERY,
                                 onClick = {
-                                    navController.navigate(AppDestinations.GALLERY) {
-                                        popUpTo(navController.graph.startDestinationId) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    navigateToTopLevel(AppDestinations.GALLERY)
                                 },
                                 icon = {
                                     Icon(
@@ -171,54 +177,147 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    NavHost(
-                        navController = navController,
-                        startDestination = AppDestinations.HOME,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        composable(AppDestinations.HOME) {
-                            HomeRoute(
-                                viewModel = homeViewModel,
-                                onCocktailClick = { cocktailId ->
-                                    navController.navigate(AppDestinations.detailRoute(cocktailId))
+                    if (isTopLevel && isLandscape) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                        ) {
+                            NavigationRail {
+                                NavigationRailItem(
+                                    selected = currentRoute == AppDestinations.HOME,
+                                    onClick = { navigateToTopLevel(AppDestinations.HOME) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Home,
+                                            contentDescription = "Home"
+                                        )
+                                    },
+                                    label = { Text("Home") }
+                                )
+                                NavigationRailItem(
+                                    selected = currentRoute == AppDestinations.GALLERY,
+                                    onClick = { navigateToTopLevel(AppDestinations.GALLERY) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Collections,
+                                            contentDescription = "Mijn Foto's"
+                                        )
+                                    },
+                                    label = { Text("Mijn Foto's") }
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                NavigationRailItem(
+                                    selected = isSettingsSheetVisible,
+                                    onClick = { isSettingsSheetVisible = true },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Settings,
+                                            contentDescription = "Instellingen"
+                                        )
+                                    },
+                                    label = { Text("Instellingen") }
+                                )
+                            }
+                            NavHost(
+                                navController = navController,
+                                startDestination = AppDestinations.HOME,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                composable(AppDestinations.HOME) {
+                                    HomeRoute(
+                                        viewModel = homeViewModel,
+                                        onCocktailClick = { cocktailId ->
+                                            navController.navigate(AppDestinations.detailRoute(cocktailId))
+                                        }
+                                    )
                                 }
-                            )
+
+                                composable(AppDestinations.GALLERY) {
+                                    GalleryRoute(
+                                        viewModel = galleryViewModel,
+                                        onOpenDetails = { cocktailId ->
+                                            navController.navigate(AppDestinations.detailRoute(cocktailId))
+                                        }
+                                    )
+                                }
+
+                                composable(
+                                    route = AppDestinations.DETAIL_ROUTE,
+                                    arguments = listOf(
+                                        navArgument(AppDestinations.COCKTAIL_ID_ARG) {
+                                            type = NavType.StringType
+                                        }
+                                    )
+                                ) { backStackEntry ->
+                                    val cocktailId = backStackEntry.arguments
+                                        ?.getString(AppDestinations.COCKTAIL_ID_ARG)
+                                        .orEmpty()
+
+                                    val detailViewModel: DetailViewModel = viewModel(
+                                        key = "detail_$cocktailId",
+                                        factory = DetailViewModel.provideFactory(
+                                            application = application,
+                                            cocktailId = cocktailId
+                                        )
+                                    )
+                                    DetailRoute(
+                                        viewModel = detailViewModel,
+                                        cocktailId = cocktailId
+                                    )
+                                }
+                            }
                         }
+                    } else {
+                        NavHost(
+                            navController = navController,
+                            startDestination = AppDestinations.HOME,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                        ) {
+                            composable(AppDestinations.HOME) {
+                                HomeRoute(
+                                    viewModel = homeViewModel,
+                                    onCocktailClick = { cocktailId ->
+                                        navController.navigate(AppDestinations.detailRoute(cocktailId))
+                                    }
+                                )
+                            }
 
-                        composable(AppDestinations.GALLERY) {
-                            GalleryRoute(
-                                viewModel = galleryViewModel,
-                                onOpenDetails = { cocktailId ->
-                                    navController.navigate(AppDestinations.detailRoute(cocktailId))
-                                }
-                            )
-                        }
+                            composable(AppDestinations.GALLERY) {
+                                GalleryRoute(
+                                    viewModel = galleryViewModel,
+                                    onOpenDetails = { cocktailId ->
+                                        navController.navigate(AppDestinations.detailRoute(cocktailId))
+                                    }
+                                )
+                            }
 
-                        composable(
-                            route = AppDestinations.DETAIL_ROUTE,
-                            arguments = listOf(
-                                navArgument(AppDestinations.COCKTAIL_ID_ARG) {
-                                    type = NavType.StringType
-                                }
-                            )
-                        ) { backStackEntry ->
-                            val cocktailId = backStackEntry.arguments
-                                ?.getString(AppDestinations.COCKTAIL_ID_ARG)
-                                .orEmpty()
+                            composable(
+                                route = AppDestinations.DETAIL_ROUTE,
+                                arguments = listOf(
+                                    navArgument(AppDestinations.COCKTAIL_ID_ARG) {
+                                        type = NavType.StringType
+                                    }
+                                )
+                            ) { backStackEntry ->
+                                val cocktailId = backStackEntry.arguments
+                                    ?.getString(AppDestinations.COCKTAIL_ID_ARG)
+                                    .orEmpty()
 
-                            val detailViewModel: DetailViewModel = viewModel(
-                                key = "detail_$cocktailId",
-                                factory = DetailViewModel.provideFactory(
-                                    application = application,
+                                val detailViewModel: DetailViewModel = viewModel(
+                                    key = "detail_$cocktailId",
+                                    factory = DetailViewModel.provideFactory(
+                                        application = application,
+                                        cocktailId = cocktailId
+                                    )
+                                )
+                                DetailRoute(
+                                    viewModel = detailViewModel,
                                     cocktailId = cocktailId
                                 )
-                            )
-                            DetailRoute(
-                                viewModel = detailViewModel,
-                                cocktailId = cocktailId
-                            )
+                            }
                         }
                     }
                 }
