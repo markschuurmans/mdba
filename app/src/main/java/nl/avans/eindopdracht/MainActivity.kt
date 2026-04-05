@@ -1,5 +1,6 @@
 package nl.avans.eindopdracht
 
+import android.app.Application
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -31,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,9 +46,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
@@ -103,7 +106,7 @@ class MainActivity : ComponentActivity() {
                         val title = when {
                             currentRoute == AppDestinations.GALLERY -> "Mijn Foto's"
                             currentRoute?.startsWith(AppDestinations.DETAIL) == true -> "Cocktail details"
-                            else -> "Cocktail Explorer"
+                            else -> "Cocktail ontdekker"
                         }
                         CenterAlignedTopAppBar(
                             title = { Text(title) },
@@ -219,106 +222,24 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("Instellingen") }
                                 )
                             }
-                            NavHost(
+                            AppNavGraph(
                                 navController = navController,
-                                startDestination = AppDestinations.HOME,
+                                application = application,
+                                homeViewModel = homeViewModel,
+                                galleryViewModel = galleryViewModel,
                                 modifier = Modifier.weight(1f)
-                            ) {
-                                composable(AppDestinations.HOME) {
-                                    HomeRoute(
-                                        viewModel = homeViewModel,
-                                        onCocktailClick = { cocktailId ->
-                                            navController.navigate(AppDestinations.detailRoute(cocktailId))
-                                        }
-                                    )
-                                }
-
-                                composable(AppDestinations.GALLERY) {
-                                    GalleryRoute(
-                                        viewModel = galleryViewModel,
-                                        onOpenDetails = { cocktailId ->
-                                            navController.navigate(AppDestinations.detailRoute(cocktailId))
-                                        }
-                                    )
-                                }
-
-                                composable(
-                                    route = AppDestinations.DETAIL_ROUTE,
-                                    arguments = listOf(
-                                        navArgument(AppDestinations.COCKTAIL_ID_ARG) {
-                                            type = NavType.StringType
-                                        }
-                                    )
-                                ) { backStackEntry ->
-                                    val cocktailId = backStackEntry.arguments
-                                        ?.getString(AppDestinations.COCKTAIL_ID_ARG)
-                                        .orEmpty()
-
-                                    val detailViewModel: DetailViewModel = viewModel(
-                                        key = "detail_$cocktailId",
-                                        factory = DetailViewModel.provideFactory(
-                                            application = application,
-                                            cocktailId = cocktailId
-                                        )
-                                    )
-                                    DetailRoute(
-                                        viewModel = detailViewModel,
-                                        cocktailId = cocktailId
-                                    )
-                                }
-                            }
+                            )
                         }
                     } else {
-                        NavHost(
+                        AppNavGraph(
                             navController = navController,
-                            startDestination = AppDestinations.HOME,
+                            application = application,
+                            homeViewModel = homeViewModel,
+                            galleryViewModel = galleryViewModel,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(innerPadding)
-                        ) {
-                            composable(AppDestinations.HOME) {
-                                HomeRoute(
-                                    viewModel = homeViewModel,
-                                    onCocktailClick = { cocktailId ->
-                                        navController.navigate(AppDestinations.detailRoute(cocktailId))
-                                    }
-                                )
-                            }
-
-                            composable(AppDestinations.GALLERY) {
-                                GalleryRoute(
-                                    viewModel = galleryViewModel,
-                                    onOpenDetails = { cocktailId ->
-                                        navController.navigate(AppDestinations.detailRoute(cocktailId))
-                                    }
-                                )
-                            }
-
-                            composable(
-                                route = AppDestinations.DETAIL_ROUTE,
-                                arguments = listOf(
-                                    navArgument(AppDestinations.COCKTAIL_ID_ARG) {
-                                        type = NavType.StringType
-                                    }
-                                )
-                            ) { backStackEntry ->
-                                val cocktailId = backStackEntry.arguments
-                                    ?.getString(AppDestinations.COCKTAIL_ID_ARG)
-                                    .orEmpty()
-
-                                val detailViewModel: DetailViewModel = viewModel(
-                                    key = "detail_$cocktailId",
-                                    factory = DetailViewModel.provideFactory(
-                                        application = application,
-                                        cocktailId = cocktailId
-                                    )
-                                )
-                                DetailRoute(
-                                    viewModel = detailViewModel,
-                                    cocktailId = cocktailId
-                                )
-                            }
-                        }
+                        )
                     }
                 }
 
@@ -351,6 +272,64 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppNavGraph(
+    navController: NavHostController,
+    application: Application,
+    homeViewModel: HomeViewModel,
+    galleryViewModel: GalleryViewModel,
+    modifier: Modifier = Modifier
+) {
+    NavHost(
+        navController = navController,
+        startDestination = AppDestinations.HOME,
+        modifier = modifier
+    ) {
+        composable(AppDestinations.HOME) {
+            HomeRoute(
+                viewModel = homeViewModel,
+                onCocktailClick = { cocktailId ->
+                    navController.navigate(AppDestinations.detailRoute(cocktailId))
+                }
+            )
+        }
+
+        composable(AppDestinations.GALLERY) {
+            GalleryRoute(
+                viewModel = galleryViewModel,
+                onOpenDetails = { cocktailId ->
+                    navController.navigate(AppDestinations.detailRoute(cocktailId))
+                }
+            )
+        }
+
+        composable(
+            route = AppDestinations.DETAIL_ROUTE,
+            arguments = listOf(
+                navArgument(AppDestinations.COCKTAIL_ID_ARG) {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val cocktailId = backStackEntry.arguments
+                ?.getString(AppDestinations.COCKTAIL_ID_ARG)
+                .orEmpty()
+
+            val detailViewModel: DetailViewModel = viewModel(
+                key = "detail_$cocktailId",
+                factory = DetailViewModel.provideFactory(
+                    application = application,
+                    cocktailId = cocktailId
+                )
+            )
+            DetailRoute(
+                viewModel = detailViewModel,
+                cocktailId = cocktailId
+            )
         }
     }
 }

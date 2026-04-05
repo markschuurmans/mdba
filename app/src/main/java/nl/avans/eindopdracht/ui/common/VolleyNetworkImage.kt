@@ -60,10 +60,12 @@ fun VolleyNetworkImage(
         }
     }
 
+    val loadedBitmap = bitmap
+
     when {
-        bitmap != null -> {
+        loadedBitmap != null -> {
             Image(
-                bitmap = bitmap!!.asImageBitmap(),
+                bitmap = loadedBitmap.asImageBitmap(),
                 contentDescription = contentDescription,
                 modifier = modifier,
                 contentScale = ContentScale.Crop

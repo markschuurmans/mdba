@@ -12,9 +12,13 @@ import nl.avans.eindopdracht.model.CocktailDetail
 import nl.avans.eindopdracht.network.ApiConfig
 import nl.avans.eindopdracht.network.VolleySingleton
 
-class CocktailRepository(context: Context) {
+class CocktailRepository {
 
-    private val volley = VolleySingleton.getInstance(context)
+    constructor(context: Context) {
+        this.volley = VolleySingleton.getInstance(context)
+    }
+
+    private val volley: VolleySingleton
 
     suspend fun fetchCocktails(): List<Cocktail> = suspendCancellableCoroutine { continuation ->
         val request = JsonObjectRequest(
@@ -67,7 +71,7 @@ class CocktailRepository(context: Context) {
                 { response ->
                     try {
                         val drink = response.optJSONArray("drinks")?.optJSONObject(0)
-                            ?: throw IllegalStateException("Geen cocktaildetails gevonden")
+                            ?: throw IllegalStateException("Geen details gevonden")
 
                         continuation.resume(
                             CocktailDetail(

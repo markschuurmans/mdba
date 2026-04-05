@@ -1,7 +1,6 @@
 package nl.avans.eindopdracht.ui.common
 
 import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 
 @Composable
 fun LocalUriImage(
@@ -24,7 +24,7 @@ fun LocalUriImage(
     val context = LocalContext.current
     val bitmap = remember(uriString) {
         runCatching {
-            context.contentResolver.openInputStream(Uri.parse(uriString)).use { inputStream ->
+            context.contentResolver.openInputStream(uriString.toUri()).use { inputStream ->
                 BitmapFactory.decodeStream(inputStream)
             }
         }.getOrNull()

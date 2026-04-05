@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +42,8 @@ import nl.avans.eindopdracht.data.CocktailPhotoStore
 import nl.avans.eindopdracht.model.CocktailDetail
 import nl.avans.eindopdracht.ui.common.LocalUriImage
 import nl.avans.eindopdracht.ui.common.VolleyNetworkImage
+
+private const val IMAGE_MIME_TYPE = "image/*"
 
 @Composable
 fun DetailRoute(
@@ -80,7 +83,7 @@ fun DetailRoute(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            pickImageLauncher.launch(arrayOf("image/*"))
+            pickImageLauncher.launch(arrayOf(IMAGE_MIME_TYPE))
         } else {
             Toast.makeText(context, "Toegang tot afbeeldingen geweigerd", Toast.LENGTH_SHORT)
                 .show()
@@ -112,7 +115,7 @@ fun DetailRoute(
         userPhotoUri = userPhotoUri,
         onPickUserPhoto = {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                pickImageLauncher.launch(arrayOf("image/*"))
+                pickImageLauncher.launch(arrayOf(IMAGE_MIME_TYPE))
                 return@DetailScreen
             }
 
@@ -121,7 +124,7 @@ fun DetailRoute(
                 Manifest.permission.READ_MEDIA_IMAGES
             )
             if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
-                pickImageLauncher.launch(arrayOf("image/*"))
+                pickImageLauncher.launch(arrayOf(IMAGE_MIME_TYPE))
             } else {
                 permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
             }
@@ -196,27 +199,11 @@ fun DetailScreen(
                         item {
                             Text(text = detail.name, style = MaterialTheme.typography.headlineSmall)
                         }
-                        item {
-                            Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
-                        }
-                        item {
-                            if (userPhotoUri != null) {
-                                LocalUriImage(
-                                    uriString = userPhotoUri,
-                                    contentDescription = "Eigen foto voor ${detail.name}",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(220.dp)
-                                )
-                            } else {
-                                Text(text = "Nog geen eigen foto gekozen")
-                            }
-                        }
-                        item {
-                            Button(onClick = onPickUserPhoto) {
-                                Text(text = "Upload Eigen Foto")
-                            }
-                        }
+                        userPhotoSection(
+                            cocktailName = detail.name,
+                            userPhotoUri = userPhotoUri,
+                            onPickUserPhoto = onPickUserPhoto
+                        )
                     }
 
                     androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(16.dp))
@@ -225,23 +212,7 @@ fun DetailScreen(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        item {
-                            Text(text = "Ingredienten", style = MaterialTheme.typography.titleMedium)
-                        }
-                        items(detail.ingredients) { ingredient ->
-                            Text(text = "- $ingredient", style = MaterialTheme.typography.bodyLarge)
-                        }
-                        item {
-                            Text(text = "Instructies", style = MaterialTheme.typography.titleMedium)
-                        }
-                        item {
-                            Text(text = detail.instructions, style = MaterialTheme.typography.bodyLarge)
-                        }
-                        item {
-                            Button(onClick = { onShareRecipe(detail) }) {
-                                Text(text = "Deel Recept")
-                            }
-                        }
+                        recipeSection(detail = detail, onShareRecipe = onShareRecipe)
                     }
                 }
             } else {
@@ -262,44 +233,12 @@ fun DetailScreen(
                     item {
                         Text(text = detail.name, style = MaterialTheme.typography.headlineSmall)
                     }
-                    item {
-                        Text(text = "Ingredienten", style = MaterialTheme.typography.titleMedium)
-                    }
-                    items(detail.ingredients) { ingredient ->
-                        Text(text = "- $ingredient", style = MaterialTheme.typography.bodyLarge)
-                    }
-                    item {
-                        Text(text = "Instructies", style = MaterialTheme.typography.titleMedium)
-                    }
-                    item {
-                        Text(text = detail.instructions, style = MaterialTheme.typography.bodyLarge)
-                    }
-                    item {
-                        Button(onClick = { onShareRecipe(detail) }) {
-                            Text(text = "Deel Recept")
-                        }
-                    }
-                    item {
-                        Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
-                    }
-                    item {
-                        if (userPhotoUri != null) {
-                            LocalUriImage(
-                                uriString = userPhotoUri,
-                                contentDescription = "Eigen foto voor ${detail.name}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp)
-                            )
-                        } else {
-                            Text(text = "Nog geen eigen foto gekozen")
-                        }
-                    }
-                    item {
-                        Button(onClick = onPickUserPhoto) {
-                            Text(text = "Upload Eigen Foto")
-                        }
-                    }
+                    recipeSection(detail = detail, onShareRecipe = onShareRecipe)
+                    userPhotoSection(
+                        cocktailName = detail.name,
+                        userPhotoUri = userPhotoUri,
+                        onPickUserPhoto = onPickUserPhoto
+                    )
                 }
             }
         }
@@ -314,6 +253,57 @@ fun DetailScreen(
             ) {
                 Text(text = "Geen detailinformatie beschikbaar")
             }
+        }
+    }
+}
+
+private fun LazyListScope.recipeSection(
+    detail: CocktailDetail,
+    onShareRecipe: (CocktailDetail) -> Unit
+) {
+    item {
+        Text(text = "Ingredienten", style = MaterialTheme.typography.titleMedium)
+    }
+    items(detail.ingredients) { ingredient ->
+        Text(text = "- $ingredient", style = MaterialTheme.typography.bodyLarge)
+    }
+    item {
+        Text(text = "Instructies", style = MaterialTheme.typography.titleMedium)
+    }
+    item {
+        Text(text = detail.instructions, style = MaterialTheme.typography.bodyLarge)
+    }
+    item {
+        Button(onClick = { onShareRecipe(detail) }) {
+            Text(text = "Deel Recept")
+        }
+    }
+}
+
+private fun LazyListScope.userPhotoSection(
+    cocktailName: String,
+    userPhotoUri: String?,
+    onPickUserPhoto: () -> Unit
+) {
+    item {
+        Text(text = "Jouw Foto", style = MaterialTheme.typography.titleMedium)
+    }
+    item {
+        if (userPhotoUri != null) {
+            LocalUriImage(
+                uriString = userPhotoUri,
+                contentDescription = "Eigen foto voor $cocktailName",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            )
+        } else {
+            Text(text = "Nog geen eigen foto gekozen")
+        }
+    }
+    item {
+        Button(onClick = onPickUserPhoto) {
+            Text(text = "Upload Eigen Foto")
         }
     }
 }

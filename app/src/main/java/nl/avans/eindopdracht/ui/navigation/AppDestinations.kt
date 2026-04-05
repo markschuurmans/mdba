@@ -7,8 +7,6 @@ object AppDestinations {
     const val COCKTAIL_ID_ARG = "cocktailId"
     const val DETAIL_ROUTE = "$DETAIL/{$COCKTAIL_ID_ARG}"
 
-    fun detailRoute(cocktailId: String): String {
-        return "$DETAIL/$cocktailId"
-    }
+    fun detailRoute(cocktailId: String): String = "$DETAIL/$cocktailId"
 }
 
