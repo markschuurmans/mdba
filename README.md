@@ -1,43 +1,21 @@
 # Cocktail Explorer
 
-Stap 1 basis voor de app is opgezet met:
+Eindopdracht voor MDBA
 
-- Jetpack Compose UI (`HomeScreen` + `HomeViewModel`)
-- Volley networking (`VolleySingleton` + `CocktailRepository`)
-- Cocktail data model (`Cocktail`)
-- API-call naar `filter.php?c=Cocktail`
-- Basis foutafhandeling (error tekst + retry)
+## Functionaliteiten
 
-Stap 2 is toegevoegd met:
+- **Overzicht & Details:** Een lijst van cocktails in een `LazyColumn` met doorklikmogelijkheid naar een gedetailleerd receptenscherm.
+- **API Integratie:** Gebruik van `Volley` voor het ophalen van data (JSON).
+- **Interactie & Intents:**
+    - Recepten delen via `ACTION_SEND`.
+    - Eigen foto's voor cocktails kiezen met de `OpenDocument` intent.
+- **Data Opslag:** Lokale opslag van foto-referenties (URI's) voor een gepersonaliseerde ervaring.
+- **Navigatie:** Gebruik van `Navigation Compose` voor een soepele ervaring tussen het overzicht, de details en het galerijscherm.
+- **Responsive UI:** De layout past zich automatisch aan bij wisseling tussen portrait en landscape oriëntatie.
+- **Runtime Permissions:** Vraagt om de nodige permissies voor toegang tot afbeeldingen.
 
-- Navigation Compose (`home` -> `detail/{cocktailId}`)
-- Klikbare cocktail-rijen in de home lijst
-- Thumbnail rendering via Volley `ImageRequest` (zonder externe image library)
-- Detailflow met `lookup.php?i=ID` via `DetailViewModel`
-- Ingredienten + instructies op het detail scherm
-- `Deel Recept` knop via implicit intent (`ACTION_SEND`)
-- Upload eigen foto op detailpagina met implicit intent + lokale opslag van URI
-- Bottom navigation met extra galerijscherm voor alle geuploade foto's
+## Architectuur
 
-## Belangrijke bestanden
-
-- `app/src/main/java/nl/avans/eindopdracht/MainActivity.kt`
-- `app/src/main/java/nl/avans/eindopdracht/model/Cocktail.kt`
-- `app/src/main/java/nl/avans/eindopdracht/model/CocktailDetail.kt`
-- `app/src/main/java/nl/avans/eindopdracht/network/ApiConfig.kt`
-- `app/src/main/java/nl/avans/eindopdracht/network/VolleySingleton.kt`
-- `app/src/main/java/nl/avans/eindopdracht/data/CocktailRepository.kt`
-- `app/src/main/java/nl/avans/eindopdracht/data/CocktailPhotoStore.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/home/HomeViewModel.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/home/HomeScreen.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/common/VolleyNetworkImage.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/navigation/AppDestinations.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailScreen.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailViewModel.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/detail/DetailUiState.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/gallery/GalleryScreen.kt`
-- `app/src/main/java/nl/avans/eindopdracht/ui/gallery/GalleryViewModel.kt`
-
-## Opmerking
-
-Lokale build-check kon niet worden uitgevoerd in deze omgeving omdat er geen Java Runtime beschikbaar is.
+- **Repository Pattern:** Voor een goede scheiding tussen data-ophalen en de UI.
+- **MVVM:** Gebruik van `ViewModel` en `UiState` om data veilig en asynchroon (coroutines) te verwerken.
+- **Jetpack Compose:** Volledig opgebouwd in declaratieve UI.
